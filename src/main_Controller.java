@@ -1,6 +1,10 @@
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -13,57 +17,100 @@ import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 public class main_Controller {
 
-	public static String filePath;
-	public static String outPath;
-	public static String new_fileName;
-	StringBuffer command;
-	StringBuffer output;
+	public static String filePath, outPath, new_fileName, saved_File;
+	public static String organ, file_Type;
+	public static StringBuffer command;
+	public static StringBuffer output;
 
 	@FXML
-	Label file_Path_Label, updateMessage, small_Update;
+	Label file_Path_Label, status;
+	@FXML
+	Label updateMessage, small_Update, comment2;
 	@FXML
 	AnchorPane done_Anchor;
 	@FXML
 	ImageView gif_ImageView;
+	@FXML
+	ComboBox export_Type, organ_Selector;
+	@FXML
+	VBox web_ViewBox2, web_ViewBox1;
+	@FXML
+	Hyperlink hyperLink1, hyperLink2;
+	@FXML
+	ProgressBar progress_Bar;
+	@FXML
+	ProgressIndicator progress_Ind;
 
-	////// PROCESS MESH /////////////////
+	/// OPENING FILE CHOOSER TO SELECT MESH /////////////////
+	public void select_Mesh() {
+
+		final FileChooser fileChooser = new FileChooser();
+		File file = fileChooser.showOpenDialog(Main.thestage);
+
+		if (file != null) {
+			System.out.println(file.toString());
+			filePath = file.toString();
+
+			// Alert if file type is incorrect - must be .stl file
+			if (!(filePath.substring((filePath.length() - 4), filePath.length()).equals(".stl"))) {
+				Alert alert = new Alert(AlertType.WARNING);
+				alert.setTitle("Warning");
+				alert.setHeaderText("Sorry that file type is not accepted");
+				alert.setContentText("Please upload a .stl file for processing");
+				alert.showAndWait();
+				filePath = null;
+			}
+
+			else {
+				filePath = file.toString();
+				String[] outPath_Array = filePath.split("/");
+
+				// get directory path (without file name)
+				outPath = filePath.replace(outPath_Array[outPath_Array.length - 1], "");
+				System.out.println(outPath);
+				new_fileName = outPath_Array[outPath_Array.length - 1];
+
+				file_Path_Label.setText(filePath);
+			}
+		}
+
+	}
+
+	////// START PROCESS MESH /////////////////
 	public void process_Mesh() {
 
 		if (filePath != null) {
 
-			// CREATE THE STRING COMMAND USING THE UPLOADED FILE
-			output = new StringBuffer();
-
-			command = new StringBuffer();
-			command.append(Main.blender_Path);
-			command.append(
-					"Blender/blender.app/Contents/MacOS/blender --background --python /Volumes/Maxtor/Caroline_documentes/decimator/decimate.py -- ");
-
-			command.append(filePath);
-			command.append(" ");
-			command.append(outPath);
-			command.append(new_fileName);
-
+			build_Command_From_Selection(); 
+			
 			updateMessage.setText("Thanks! Your mesh is being processed...");
 			small_Update.setText("(This may take some time. Files over 100MB may take over 5minutes)");
-			gif_ImageView.setImage(new Image(this.getClass().getResource("kidney.gif").toExternalForm()));
-
-			//CALL EXECUTE COMMAND FUNCTION
-			Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), ae -> executeCommand()));
+			gif_ImageView.setImage(new Image(this.getClass().getResource("watch2.png").toExternalForm()));
+			
+			// Call execute command function with slight delay - to allow above
+			// labels to be set
+			Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), ae -> start_Background_Task()));
 			timeline.play();
-			
+
 		} else {
-			
-			//ALERT IF NO FILE SELECTED
+
+			// ALERT IF NO FILE SELECTED
 			Alert alert = new Alert(AlertType.WARNING);
 			alert.setTitle("Warning");
 			alert.setHeaderText("A file has not been selected");
@@ -74,8 +121,25 @@ public class main_Controller {
 	}
 
 	///// COMMAND LINE FUNCTION /////////////
-	public void executeCommand() {
+	public void start_Background_Task() {
 
+		executeMeshCommand task = new executeMeshCommand();
+
+	//	progress_Bar.progressProperty().bind(task.progressProperty());
+	//	progress_Ind.progressProperty().bind(task.progressProperty());
+	//	status.textProperty().bind(task.messageProperty());
+
+		new Thread(task).start();
+		
+		task.setOnSucceeded(e -> {
+		    updateLabels();
+		});
+	
+	}
+	
+	
+	public void process_Command() {
+		
 		Process p;
 
 		try {
@@ -92,49 +156,80 @@ public class main_Controller {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 		System.out.println(output.toString());
-
+		
+		
+	}
+	
+	
+	public void updateLabels() {
 		updateMessage.setText("Success!  Mesh Processing Complete");
 		done_Anchor.setVisible(true);
 
-		String saved_File = "Your processed mesh has been saved in: ";
-		saved_File += outPath;
-		saved_File += new_fileName;
-		small_Update.setText(saved_File);
+		String message = "Your processed mesh has been saved in: ";
+		saved_File = outPath + new_fileName;
+		small_Update.setText(message);
+		gif_ImageView.setVisible(false);
+		hyperLink1.setText(saved_File);
+		comment2.setText("View glb files");
+		hyperLink2.setText("here");
+	}
+	
+	public void build_Command_From_Selection() {
+		
+		file_Type = (String) export_Type.getSelectionModel().getSelectedItem();
+		organ = (String) organ_Selector.getSelectionModel().getSelectedItem();
+
+		if (organ == null) {
+			organ = "Lung";
+		}
+		if (file_Type == null) {
+			file_Type = "glb";
+		}
+
+		// create new file name with .fbx or .glb extension
+		new_fileName = new_fileName.substring(0, (new_fileName.length() - 3));
+		if (file_Type == "fbx") {
+			new_fileName += "fbx";
+		} else {
+			new_fileName += "glb";
+		}
+		System.out.println(new_fileName);
+
+		// CREATE THE STRING COMMAND USING THE UPLOADED FILE
+		output = new StringBuffer();
+
+		command = new StringBuffer();
+		command.append(Main.blender_Path);
+		command.append("Blender/blender.app/Contents/MacOS/blender --background --python decimate.py -- ");
+
+		command.append(filePath);
+		command.append(" ");
+		command.append(outPath);
+		command.append(new_fileName);
+		command.append(" ");
+		command.append(organ);
+		command.append(" ");
+		command.append(file_Type);
+		
+	}
+	
+
+
+	public void show_File() {
+		final FileChooser fileChooser2 = new FileChooser();
+		fileChooser2.setInitialDirectory(new File(outPath));
+		File file2 = fileChooser2.showOpenDialog(Main.thestage);
 
 	}
 
-	/// OPENING FILE CHOOSER TO SELECT MESH /////////////////
-	public void select_Mesh() {
-
-		final FileChooser fileChooser = new FileChooser();
-		File file = fileChooser.showOpenDialog(Main.thestage);
-		System.out.println(file.toString());
-		filePath = file.toString();
-
-		if (!(filePath.substring((filePath.length() - 4), filePath.length()).equals(".stl"))) {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle("Warning");
-			alert.setHeaderText("Sorry that file type is not accepted");
-			alert.setContentText("Please upload a .stl file for processing");
-			alert.showAndWait();
-			filePath = null;
-		}
-
-		else {
-			filePath = file.toString();
-			String[] outPath_Array = filePath.split("/");
-
-			outPath = filePath.replace(outPath_Array[outPath_Array.length - 1], "");
-			System.out.println(outPath);
-
-			new_fileName = outPath_Array[outPath_Array.length - 1];
-			new_fileName = new_fileName.substring(0, (new_fileName.length() - 3));
-			new_fileName += "fbx";
-			System.out.println(new_fileName);
-
-			file_Path_Label.setText(filePath);
+	public void open_glbViewer() {
+		try {
+			Desktop.getDesktop().browse(new URI("https://gltf-viewer.donmccurdy.com/"));
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (URISyntaxException e1) {
+			e1.printStackTrace();
 		}
 
 	}
@@ -147,6 +242,9 @@ public class main_Controller {
 		filePath = null;
 		outPath = null;
 		new_fileName = null;
+		
+		//cancel thread
+		//file path to null
 
 	}
 
@@ -154,13 +252,28 @@ public class main_Controller {
 	public void initialize() {
 		done_Anchor.setVisible(false);
 
+		export_Type.getItems().addAll("fbx", "glb");
+		organ_Selector.getItems().addAll("Skin", "Brain", "Lung", "Heart", "Bone");
+
+		//Lays out the webview engine on third tab with hololens web app
+		WebView web_View2 = new WebView();
+		WebEngine engine = web_View2.getEngine();
+		engine.load("https://goshmhif.azurewebsites.net/Hololens-Webapp/#/add");
+		engine.setJavaScriptEnabled(true);
+
+		web_ViewBox2.getChildren().addAll(web_View2);
+
+		//lays out webview wngine on second tab with gltf viewer app
+		WebView web_View1 = new WebView();
+		WebEngine engine1 = web_View1.getEngine();
+		engine1.load("https://gltf-viewer.donmccurdy.com/");
+		engine1.setJavaScriptEnabled(true);
+
+		web_ViewBox1.getChildren().addAll(web_View1);
+
+		
+		
+
 	}
 
 }
-
-// file:/E:/Caroline_documentes/workspace/Tester32/bin/
-
-// "/E:/Caroline_documentes/workspace/Mesh_Pro/blender-2.79b-windows64/blender
-// --background --python E:/Caroline_documentes/decimator/decimate.py --
-// E:/Caroline_documentes/fetal_stls/right_lung.stl
-// E:/Caroline_documentes/fetal_stls/javanew12.fbx"

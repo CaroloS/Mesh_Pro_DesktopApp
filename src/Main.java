@@ -18,14 +18,13 @@ public class Main extends Application {
 
 			thestage = primaryStage;
 
-			// System.out.println(new File("").getAbsolutePath());
+			//Gets the absolute path of this application on user's system
 			System.out.println(this.getClass().getProtectionDomain().getCodeSource().getLocation());
-			
 			blender_Path = this.getClass().getProtectionDomain().getCodeSource().getLocation().toString();
 			blender_Path = blender_Path.substring(5, (blender_Path.length() - 4));
 			System.out.println(blender_Path);
 
-
+			//Loads the main scene from fxml
 			Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
 			Scene scene = new Scene(root, 1108, 783);
 			thestage.setScene(scene);
@@ -44,6 +43,3 @@ public class Main extends Application {
 	
 
 }
-
-//String osName = System.getProperty("os.name").toLowerCase();
-//System.out.println(osName);
