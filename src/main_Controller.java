@@ -39,9 +39,7 @@ public class main_Controller {
 	public static StringBuffer output;
 
 	@FXML
-	Label file_Path_Label, status;
-	@FXML
-	Label updateMessage, small_Update, comment2;
+	Label file_Path_Label, status, updateMessage, small_Update, comment2;
 	@FXML
 	AnchorPane done_Anchor;
 	@FXML
@@ -52,10 +50,10 @@ public class main_Controller {
 	VBox web_ViewBox2, web_ViewBox1;
 	@FXML
 	Hyperlink hyperLink1, hyperLink2;
-	@FXML
-	ProgressBar progress_Bar;
-	@FXML
-	ProgressIndicator progress_Ind;
+
+//	executeMeshCommand task;
+	public static executeMeshCommand task = new executeMeshCommand();
+	public static Process p;
 
 	/// OPENING FILE CHOOSER TO SELECT MESH /////////////////
 	public void select_Mesh() {
@@ -97,13 +95,14 @@ public class main_Controller {
 
 		if (filePath != null) {
 
-			build_Command_From_Selection(); 
-			
+			build_Command_From_Selection();
+
 			updateMessage.setText("Thanks! Your mesh is being processed...");
 			small_Update.setText("(This may take some time. Files over 100MB may take over 5minutes)");
-			gif_ImageView.setImage(new Image(this.getClass().getResource("watch2.png").toExternalForm()));
-			
-			// Call execute command function with slight delay - to allow above
+			gif_ImageView.setVisible(true);
+			gif_ImageView.setImage(new Image(this.getClass().getResource("stopwtach.gif").toExternalForm()));
+
+			// Call start_Background_Task() with slight delay - to allow above
 			// labels to be set
 			Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), ae -> start_Background_Task()));
 			timeline.play();
@@ -123,25 +122,27 @@ public class main_Controller {
 	///// COMMAND LINE FUNCTION /////////////
 	public void start_Background_Task() {
 
-		executeMeshCommand task = new executeMeshCommand();
+		//task = new executeMeshCommand();
+	//	System.out.println(task);
 
-	//	progress_Bar.progressProperty().bind(task.progressProperty());
-	//	progress_Ind.progressProperty().bind(task.progressProperty());
-	//	status.textProperty().bind(task.messageProperty());
+		// progress_Bar.progressProperty().bind(task.progressProperty());
+		// progress_Ind.progressProperty().bind(task.progressProperty());
+		// status.textProperty().bind(task.messageProperty());
 
 		new Thread(task).start();
-		
-		task.setOnSucceeded(e -> {
-		    updateLabels();
-		});
-	
-	}
-	
-	
-	public void process_Command() {
-		
-		Process p;
 
+		task.setOnSucceeded(e -> {
+			updateLabels_Success();
+		});
+
+		task.setOnFailed(e -> {
+			updateLabels_Failed();
+		});
+
+	}
+
+	public static void process_Command() {
+		
 		try {
 			p = Runtime.getRuntime().exec(command.toString());
 			p.waitFor();
@@ -151,18 +152,36 @@ public class main_Controller {
 			String line = "";
 			while ((line = reader.readLine()) != null) {
 				output.append(line + "\n");
+
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		catch (InterruptedException e) {
+			
+		}
 		System.out.println(output.toString());
+		p.destroy();
 		
-		
+
 	}
-	
-	
-	public void updateLabels() {
+
+	public void updateLabels_Success() {
+		updateMessage.setText("Success!");
+		done_Anchor.setVisible(true);
+
+		String message = "Your processed mesh has been saved in: ";
+		saved_File = outPath + new_fileName;
+		small_Update.setText(message);
+		gif_ImageView.setVisible(false);
+		hyperLink1.setText(saved_File);
+		comment2.setText("View glb files");
+		hyperLink2.setText("here");
+
+	}
+
+	public void updateLabels_Failed() {
 		updateMessage.setText("Success!  Mesh Processing Complete");
 		done_Anchor.setVisible(true);
 
@@ -174,9 +193,9 @@ public class main_Controller {
 		comment2.setText("View glb files");
 		hyperLink2.setText("here");
 	}
-	
+
 	public void build_Command_From_Selection() {
-		
+
 		file_Type = (String) export_Type.getSelectionModel().getSelectedItem();
 		organ = (String) organ_Selector.getSelectionModel().getSelectedItem();
 
@@ -211,10 +230,8 @@ public class main_Controller {
 		command.append(organ);
 		command.append(" ");
 		command.append(file_Type);
-		
-	}
-	
 
+	}
 
 	public void show_File() {
 		final FileChooser fileChooser2 = new FileChooser();
@@ -242,10 +259,18 @@ public class main_Controller {
 		filePath = null;
 		outPath = null;
 		new_fileName = null;
+		hyperLink1.setText("");
+		hyperLink2.setText("");
+		comment2.setText("");
+		new_fileName = null;
+		saved_File = null;
+		gif_ImageView.setVisible(false);
+		// cancel thread
 		
-		//cancel thread
-		//file path to null
-
+		System.out.println(task);
+		task.cancel(true);
+		task = new executeMeshCommand();
+		
 	}
 
 	@FXML
@@ -255,24 +280,25 @@ public class main_Controller {
 		export_Type.getItems().addAll("fbx", "glb");
 		organ_Selector.getItems().addAll("Skin", "Brain", "Lung", "Heart", "Bone");
 
-		//Lays out the webview engine on third tab with hololens web app
+		// Lays out the webview engine on third tab with hololens web app
 		WebView web_View2 = new WebView();
+		web_View2.setPrefHeight(783);
+		web_View2.setPrefWidth(1108);
 		WebEngine engine = web_View2.getEngine();
 		engine.load("https://goshmhif.azurewebsites.net/Hololens-Webapp/#/add");
 		engine.setJavaScriptEnabled(true);
 
 		web_ViewBox2.getChildren().addAll(web_View2);
 
-		//lays out webview wngine on second tab with gltf viewer app
+		// lays out webview wngine on second tab with gltf viewer app
 		WebView web_View1 = new WebView();
+		web_View1.setPrefHeight(783);
+		web_View1.setPrefWidth(1108);
 		WebEngine engine1 = web_View1.getEngine();
 		engine1.load("https://gltf-viewer.donmccurdy.com/");
 		engine1.setJavaScriptEnabled(true);
 
 		web_ViewBox1.getChildren().addAll(web_View1);
-
-		
-		
 
 	}
 

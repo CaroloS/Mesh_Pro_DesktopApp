@@ -4,8 +4,6 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ProgressBar?>
-<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.image.Image?>
@@ -18,7 +16,7 @@
 
 <TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="811.0" prefWidth="1092.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main_Controller">
   <tabs>
-    <Tab text="Untitled Tab 1">
+    <Tab text="Mesh Pro">
          <content>
             <FlowPane alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="782.0" prefWidth="1108.0" stylesheets="@login_styles.css">
                <children>
@@ -123,16 +121,13 @@
                         <Hyperlink fx:id="hyperLink1" layoutX="149.0" layoutY="675.0" onAction="#show_File" prefHeight="35.0" prefWidth="433.0" textFill="#f5f5f5" underline="true" wrapText="true" />
                         <Label fx:id="comment2" layoutX="155.0" layoutY="709.0" prefHeight="25.0" prefWidth="376.0" textFill="WHITE" />
                         <Hyperlink fx:id="hyperLink2" layoutX="233.0" layoutY="709.0" onAction="#open_glbViewer" prefHeight="25.0" prefWidth="53.0" textFill="WHITE" underline="true" />
-                        <Label fx:id="status" layoutX="10.0" layoutY="313.0" prefHeight="82.0" prefWidth="137.0" text="Label" textFill="WHITE" />
-                        <ProgressBar fx:id="progress_Bar" layoutX="291.0" layoutY="291.0" prefHeight="33.0" prefWidth="244.0" progress="0.0" />
-                        <ProgressIndicator fx:id="progress_Ind" layoutX="134.0" layoutY="260.0" prefHeight="86.0" prefWidth="101.0" progress="0.0" />
                      </children>
                   </AnchorPane>
                </children>
             </FlowPane>
          </content>
     </Tab>
-    <Tab text="Untitled Tab 2">
+    <Tab text="gltf Viewer">
       <content>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="778.0" prefWidth="1099.0">
                <children>
@@ -140,11 +135,11 @@
                </children></AnchorPane>
       </content>
     </Tab>
-      <Tab text="Untitled Tab">
+      <Tab text="Upload Case">
         <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="813.0" prefWidth="1132.0">
                <children>
-                  <VBox fx:id="web_ViewBox2" prefHeight="780.0" prefWidth="1095.0" />
+                  <VBox fx:id="web_ViewBox2" prefHeight="785.0" prefWidth="1115.0" />
                </children>
             </AnchorPane>
         </content>
