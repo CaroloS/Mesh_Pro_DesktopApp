@@ -3,30 +3,31 @@ import java.io.InputStreamReader;
 
 import javafx.concurrent.Task;
 
-public class executeMeshCommand extends Task<Integer> {
+public class executeMeshCommandTest extends Task<Integer> {
 
+	public String inProcess;
+	public Boolean done;
+	public Boolean cancelled = false;
+	
 	@Override
 	protected Integer call() throws Exception {
 		
-		main_Controller.process_Command();
-
-		System.out.println("done!");
+		inProcess = "task in process ";
 		return 10;
 		
 	}
 	
 	@Override
 	public boolean cancel(boolean mayInterruptIfRunning) {
-		updateMessage("Cancelled!");
-		System.out.println("cancelled");
+		cancelled = true;
 		return super.cancel(mayInterruptIfRunning);
 	}
 	
 	
 	@Override
 	protected void updateProgress(double workDone, double max) {
-		updateMessage("progress!" + workDone);
-		super.updateProgress(workDone, max);
+		done = true;
+		
 	}
 	
 	

@@ -31,12 +31,13 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
-public class main_Controller {
+public class Main_Controller {
 
 	public static String filePath, outPath, new_fileName, saved_File;
 	public static String organ, file_Type;
-	public static StringBuffer command;
-	public static StringBuffer output;
+	
+	File file;
+	Alert alert;
 
 	@FXML
 	Label file_Path_Label, status, updateMessage, small_Update, comment2;
@@ -51,15 +52,20 @@ public class main_Controller {
 	@FXML
 	Hyperlink hyperLink1, hyperLink2;
 
-//	executeMeshCommand task;
-	public static executeMeshCommand task = new executeMeshCommand();
-	public static Process p;
+//	BackgroundTask task;
+	public static BackgroundTask task = new BackgroundTask();
+	
 
-	/// OPENING FILE CHOOSER TO SELECT MESH /////////////////
-	public void select_Mesh() {
+	/**
+	 * 
+	 * 
+	 */
+	private void select_Mesh() {
+		
+		refresh_Page();
 
 		final FileChooser fileChooser = new FileChooser();
-		File file = fileChooser.showOpenDialog(Main.thestage);
+		file = fileChooser.showOpenDialog(Main.thestage);
 
 		if (file != null) {
 			System.out.println(file.toString());
@@ -90,12 +96,18 @@ public class main_Controller {
 
 	}
 
-	////// START PROCESS MESH /////////////////
-	public void process_Mesh() {
+	/**
+	 * 
+	 * 
+	 */
+	private void process_Mesh() {
 
 		if (filePath != null) {
 
-			build_Command_From_Selection();
+			file_Type = (String) export_Type.getSelectionModel().getSelectedItem();
+			organ = (String) organ_Selector.getSelectionModel().getSelectedItem();
+			
+			Command.build_Command_From_Selection(file_Type, organ);
 
 			updateMessage.setText("Thanks! Your mesh is being processed...");
 			small_Update.setText("(This may take some time. Files over 100MB may take over 5minutes)");
@@ -110,7 +122,7 @@ public class main_Controller {
 		} else {
 
 			// ALERT IF NO FILE SELECTED
-			Alert alert = new Alert(AlertType.WARNING);
+			alert = new Alert(AlertType.WARNING);
 			alert.setTitle("Warning");
 			alert.setHeaderText("A file has not been selected");
 			alert.setContentText("Please upload a file for processing");
@@ -119,18 +131,19 @@ public class main_Controller {
 
 	}
 
-	///// COMMAND LINE FUNCTION /////////////
-	public void start_Background_Task() {
-
-		//task = new executeMeshCommand();
-	//	System.out.println(task);
+	/**
+	 * 
+	 * 
+	 */
+	private void start_Background_Task() {
 
 		// progress_Bar.progressProperty().bind(task.progressProperty());
 		// progress_Ind.progressProperty().bind(task.progressProperty());
 		// status.textProperty().bind(task.messageProperty());
 
 		new Thread(task).start();
-
+		
+		
 		task.setOnSucceeded(e -> {
 			updateLabels_Success();
 		});
@@ -138,36 +151,22 @@ public class main_Controller {
 		task.setOnFailed(e -> {
 			updateLabels_Failed();
 		});
+		
+		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(420000), ae -> check_Finished()));
+		timeline.play();
 
 	}
-
-	public static void process_Command() {
-		
-		try {
-			p = Runtime.getRuntime().exec(command.toString());
-			p.waitFor();
-
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String line = "";
-			while ((line = reader.readLine()) != null) {
-				output.append(line + "\n");
-
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		catch (InterruptedException e) {
+	
+	private void check_Finished() {
+		if (task.isRunning()) {
+			gif_ImageView.setVisible(false);
 			
 		}
-		System.out.println(output.toString());
-		p.destroy();
-		
-
 	}
 
-	public void updateLabels_Success() {
+
+	private void updateLabels_Success() {
+		
 		updateMessage.setText("Success!");
 		done_Anchor.setVisible(true);
 
@@ -181,7 +180,8 @@ public class main_Controller {
 
 	}
 
-	public void updateLabels_Failed() {
+	private void updateLabels_Failed() {
+		
 		updateMessage.setText("Success!  Mesh Processing Complete");
 		done_Anchor.setVisible(true);
 
@@ -193,65 +193,37 @@ public class main_Controller {
 		comment2.setText("View glb files");
 		hyperLink2.setText("here");
 	}
+	
 
-	public void build_Command_From_Selection() {
-
-		file_Type = (String) export_Type.getSelectionModel().getSelectedItem();
-		organ = (String) organ_Selector.getSelectionModel().getSelectedItem();
-
-		if (organ == null) {
-			organ = "Lung";
-		}
-		if (file_Type == null) {
-			file_Type = "glb";
-		}
-
-		// create new file name with .fbx or .glb extension
-		new_fileName = new_fileName.substring(0, (new_fileName.length() - 3));
-		if (file_Type == "fbx") {
-			new_fileName += "fbx";
-		} else {
-			new_fileName += "glb";
-		}
-		System.out.println(new_fileName);
-
-		// CREATE THE STRING COMMAND USING THE UPLOADED FILE
-		output = new StringBuffer();
-
-		command = new StringBuffer();
-		command.append(Main.blender_Path);
-		command.append("Blender/blender.app/Contents/MacOS/blender --background --python decimate.py -- ");
-
-		command.append(filePath);
-		command.append(" ");
-		command.append(outPath);
-		command.append(new_fileName);
-		command.append(" ");
-		command.append(organ);
-		command.append(" ");
-		command.append(file_Type);
-
-	}
-
-	public void show_File() {
+	
+	private void show_File() {
+		
 		final FileChooser fileChooser2 = new FileChooser();
 		fileChooser2.setInitialDirectory(new File(outPath));
 		File file2 = fileChooser2.showOpenDialog(Main.thestage);
 
 	}
 
-	public void open_glbViewer() {
+	
+	private Boolean open_glbViewer() {
+		Boolean notOpen = false;
+		
 		try {
 			Desktop.getDesktop().browse(new URI("https://gltf-viewer.donmccurdy.com/"));
 		} catch (IOException e1) {
+			notOpen = true;
 			e1.printStackTrace();
 		} catch (URISyntaxException e1) {
 			e1.printStackTrace();
+			notOpen = true;
 		}
+		return notOpen;
 
 	}
-
+	
+	
 	public void refresh_Page() {
+		
 		updateMessage.setText("");
 		small_Update.setText("");
 		file_Path_Label.setText("");
@@ -265,21 +237,24 @@ public class main_Controller {
 		new_fileName = null;
 		saved_File = null;
 		gif_ImageView.setVisible(false);
+		
 		// cancel thread
 		
 		System.out.println(task);
 		task.cancel(true);
-		task = new executeMeshCommand();
+		task = new BackgroundTask();
 		
 	}
 
 	@FXML
 	public void initialize() {
+		
 		done_Anchor.setVisible(false);
 
 		export_Type.getItems().addAll("fbx", "glb");
 		organ_Selector.getItems().addAll("Skin", "Brain", "Lung", "Heart", "Bone");
 
+		
 		// Lays out the webview engine on third tab with hololens web app
 		WebView web_View2 = new WebView();
 		web_View2.setPrefHeight(783);
@@ -287,6 +262,7 @@ public class main_Controller {
 		WebEngine engine = web_View2.getEngine();
 		engine.load("https://goshmhif.azurewebsites.net/Hololens-Webapp/#/add");
 		engine.setJavaScriptEnabled(true);
+		
 
 		web_ViewBox2.getChildren().addAll(web_View2);
 
