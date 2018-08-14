@@ -24,12 +24,12 @@
                      <children>
                         <ImageView fitHeight="494.0" fitWidth="405.0" layoutX="-2.0" pickOnBounds="true" AnchorPane.bottomAnchor="291.0" AnchorPane.leftAnchor="-2.0" AnchorPane.rightAnchor="-2.0" AnchorPane.topAnchor="0.0">
                            <image>
-                              <Image url="@kidney.png" />
+                              <Image url="@Images/kidney.png" />
                            </image>
                         </ImageView>
                         <ImageView fitHeight="291.0" fitWidth="401.0" layoutY="494.0" pickOnBounds="true">
                            <image>
-                              <Image url="@../../../../../../Users/carolinesmith/Desktop/mesh_pro.png" />
+                              <Image url="@Images/mesh_pro.png" />
                            </image>
                         </ImageView>
                      </children>
@@ -52,7 +52,7 @@
                            </font>
                         </Button>
                         <Label fx:id="file_Path_Label" layoutX="36.0" layoutY="203.0" prefHeight="73.0" prefWidth="328.0" textFill="WHITE" wrapText="true" />
-                        <Label fx:id="updateMessage" layoutX="160.0" layoutY="309.0" prefHeight="35.0" prefWidth="384.0" textFill="WHITE">
+                        <Label fx:id="updateMessage" layoutX="147.0" layoutY="309.0" prefHeight="110.0" prefWidth="433.0" textFill="WHITE" wrapText="true">
                            <font>
                               <Font size="18.0" />
                            </font>
@@ -62,7 +62,7 @@
                            <graphic>
                               <ImageView fitHeight="33.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                                  <image>
-                                    <Image url="@../../../../../../Users/carolinesmith/Downloads/refresh.png" />
+                                    <Image url="@Images/refresh.png" />
                                  </image>
                               </ImageView>
                            </graphic>
@@ -75,12 +75,12 @@
                                     <Label layoutX="60.0" layoutY="32.0" prefHeight="38.0" prefWidth="350.0" text="Mesh surface simplified" textFill="WHITE" />
                                     <Label layoutX="59.0" layoutY="80.0" prefHeight="38.0" prefWidth="348.0" text="Mesh smoothed" textFill="WHITE" />
                                     <Label layoutX="58.0" layoutY="135.0" prefHeight="38.0" prefWidth="347.0" text="Material applied" textFill="#fcfcfc" />
-                                    <Label layoutX="57.0" layoutY="186.0" prefHeight="38.0" prefWidth="339.0" text=".stl --&gt; .fbx file conversion complete" textFill="WHITE" />
-                                    <HBox layoutX="20.0" layoutY="41.0" prefHeight="29.0" prefWidth="30.0">
+                                    <Label layoutX="57.0" layoutY="186.0" prefHeight="38.0" prefWidth="339.0" text="File conversion complete" textFill="WHITE" />
+                                    <HBox layoutX="20.0" layoutY="41.0" prefHeight="29.0" prefWidth="56.0">
                                        <children>
                                           <ImageView fitHeight="23.0" fitWidth="33.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
-                                                <Image url="@../../../../../../Users/carolinesmith/Downloads/tick.png" />
+                                                <Image url="@Images/tick2.png" />
                                              </image>
                                           </ImageView>
                                        </children>
@@ -89,7 +89,7 @@
                                        <children>
                                           <ImageView fitHeight="23.0" fitWidth="33.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
-                                                <Image url="@../../../../../../Users/carolinesmith/Downloads/tick.png" />
+                                                <Image url="@Images/tick2.png" />
                                              </image>
                                           </ImageView>
                                        </children>
@@ -98,7 +98,7 @@
                                        <children>
                                           <ImageView fitHeight="23.0" fitWidth="33.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
-                                                <Image url="@../../../../../../Users/carolinesmith/Downloads/tick.png" />
+                                                <Image url="@Images/tick2.png" />
                                              </image>
                                           </ImageView>
                                        </children>
@@ -107,7 +107,7 @@
                                        <children>
                                           <ImageView fitHeight="23.0" fitWidth="33.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
-                                                <Image url="@../../../../../../Users/carolinesmith/Downloads/tick.png" />
+                                                <Image url="@Images/tick2.png" />
                                              </image>
                                           </ImageView>
                                        </children>
@@ -115,6 +115,21 @@
                                  </children>
                               </AnchorPane>
                               <ImageView fx:id="gif_ImageView" fitHeight="280.0" fitWidth="385.0" layoutX="58.0" layoutY="-3.0" pickOnBounds="true" preserveRatio="true" />
+                              <Label fx:id="cancel_Message" layoutX="33.0" layoutY="47.0" prefHeight="96.0" prefWidth="412.0" text="Mesh processing seems to be taking a while. Would you like to cancel?" textFill="WHITE" wrapText="true">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                              <Button fx:id="cancel_Button" layoutX="286.0" layoutY="140.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#refresh_Page" prefHeight="50.0" prefWidth="203.0" styleClass="login-button" text="Cancel" textFill="WHITE">
+                                 <font>
+                                    <Font name="Calisto MT Bold Italic" size="22.0" />
+                                 </font>
+                              </Button>
+                              <Button fx:id="continue_Button" layoutX="46.0" layoutY="141.0" mnemonicParsing="false" onAction="#continue_Processing" prefHeight="50.0" prefWidth="203.0" text="Continue" textFill="#0d0000">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Button>
                            </children>
                         </AnchorPane>
                         <ComboBox fx:id="export_Type" layoutX="547.0" layoutY="132.0" prefHeight="48.0" prefWidth="108.0" promptText="Export as" />
@@ -126,14 +141,6 @@
                </children>
             </FlowPane>
          </content>
-    </Tab>
-    <Tab text="gltf Viewer">
-      <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="778.0" prefWidth="1099.0">
-               <children>
-                  <VBox fx:id="web_ViewBox1" prefHeight="783.0" prefWidth="1085.0" />
-               </children></AnchorPane>
-      </content>
     </Tab>
       <Tab text="Upload Case">
         <content>

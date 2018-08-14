@@ -20,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.image.Image;
@@ -31,6 +32,13 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
+/**
+ * This class is the Controller class for the main.fxml file.
+ * It controls the flow of the GUI between different states of mesh
+ * processing. 
+ * @author carolinesmith
+ *
+ */
 public class Main_Controller {
 
 	public static String filePath, outPath, new_fileName, saved_File;
@@ -38,9 +46,12 @@ public class Main_Controller {
 	
 	File file;
 	Alert alert;
-
+	Timeline timeline_Cancel = new Timeline(new KeyFrame(Duration.millis(420000), ae -> check_Finished()));
+	
 	@FXML
-	Label file_Path_Label, status, updateMessage, small_Update, comment2;
+	Label file_Path_Label, status,  small_Update, comment2, cancel_Message;
+	@FXML
+	Label updateMessage;
 	@FXML
 	AnchorPane done_Anchor;
 	@FXML
@@ -51,16 +62,23 @@ public class Main_Controller {
 	VBox web_ViewBox2, web_ViewBox1;
 	@FXML
 	Hyperlink hyperLink1, hyperLink2;
+	@FXML
+	Button cancel_Button, continue_Button;
 
 //	BackgroundTask task;
 	public static BackgroundTask task = new BackgroundTask();
 	
 
 	/**
-	 * 
+	 * This method is called when the users clicks to upload a file
+	 * It opens a file chooser and gets the path and file selected.
+	 * If the file is not of type .stl an alert is presented to user
+	 * and the operation aborted. 
+	 * Otherwise the selection is used to set the file paths in the 
+	 * shell command in Command.java
 	 * 
 	 */
-	private void select_Mesh() {
+	public void select_Mesh() {
 		
 		refresh_Page();
 
@@ -97,10 +115,14 @@ public class Main_Controller {
 	}
 
 	/**
-	 * 
+	 * This method checks that a file has been selected (and that the file paths 
+	 * for the command are set). If they are it calls 'build_Command_From_Selection'
+	 * in Command.java. It updates the GUI that mesh processing has been started - 
+	 * stopwatch gif is presented and lables are set. Then after a second delay 
+	 * (to allow GUI to be set) the background task is called (to process the mesh)
 	 * 
 	 */
-	private void process_Mesh() {
+	public void process_Mesh() {
 
 		if (filePath != null) {
 
@@ -112,7 +134,7 @@ public class Main_Controller {
 			updateMessage.setText("Thanks! Your mesh is being processed...");
 			small_Update.setText("(This may take some time. Files over 100MB may take over 5minutes)");
 			gif_ImageView.setVisible(true);
-			gif_ImageView.setImage(new Image(this.getClass().getResource("stopwtach.gif").toExternalForm()));
+			gif_ImageView.setImage(new Image(this.getClass().getResource("Images/stopwtach.gif").toExternalForm()));
 
 			// Call start_Background_Task() with slight delay - to allow above
 			// labels to be set
@@ -132,10 +154,15 @@ public class Main_Controller {
 	}
 
 	/**
-	 * 
-	 * 
+	 * This method starts the background task by creating a new thread that takes 
+	 * the static instance of BackgroundTask.java as parameter and calling 'start()'. 
+	 * It checks for the status of the task on completion - if success then 'updateLabel_Succes()'
+	 * is called, if IOException then 'handle_IOException()' is called, if InterruptedException
+	 * then 'handle_InterruptedException()' is called. 
+	 * A timeline (timeline_Cancel) is also played whilst the task is in execution - This 
+	 * calls 'check_Finished' after 7 minutes if task is still in execution.
 	 */
-	private void start_Background_Task() {
+	public void start_Background_Task() {
 
 		// progress_Bar.progressProperty().bind(task.progressProperty());
 		// progress_Ind.progressProperty().bind(task.progressProperty());
@@ -145,26 +172,55 @@ public class Main_Controller {
 		
 		
 		task.setOnSucceeded(e -> {
-			updateLabels_Success();
+			if (Command.file_Problem == true) {
+				handle_fileProblem();
+				System.out.println("file problem");
+			}
+			else if (Command.cancelledIOError == true) {
+				handle_IOException();
+				System.out.println("picked up IO .... exception");
+				
+			}
+			else if (Command.interrupted_Error == true) {
+				handle_InterruptedExeption();
+				System.out.println("picked up interrupted exception");
+				
+			}
+			else {
+				updateLabels_Success();
+			}
+			
 		});
 
 		task.setOnFailed(e -> {
 			updateLabels_Failed();
 		});
 		
-		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(420000), ae -> check_Finished()));
-		timeline.play();
+		timeline_Cancel.play();
 
 	}
 	
+	/**
+	 * This methods is called after 7 minutes of background task execution: if
+	 * the task is still running the GUI presents to the user the options to 
+	 * continue processing or cancel. If continue the timeline is played again. 
+	 * If cancelled the timeline is stopped. 
+	 */
 	private void check_Finished() {
 		if (task.isRunning()) {
 			gif_ImageView.setVisible(false);
 			
+			cancel_Message.setVisible(true);
+			cancel_Button.setVisible(true);
+			continue_Button.setVisible(true);
+			
 		}
 	}
 
-
+	/**
+	 * This method updates the GUI on successful completion of 
+	 * mesh processing.
+	 */
 	private void updateLabels_Success() {
 		
 		updateMessage.setText("Success!");
@@ -180,32 +236,34 @@ public class Main_Controller {
 
 	}
 
+	/**
+	 * This method updates the GUI on unsucesful completion of
+	 * mesh proessing.
+	 */
 	private void updateLabels_Failed() {
 		
-		updateMessage.setText("Success!  Mesh Processing Complete");
-		done_Anchor.setVisible(true);
-
-		String message = "Your processed mesh has been saved in: ";
-		saved_File = outPath + new_fileName;
-		small_Update.setText(message);
-		gif_ImageView.setVisible(false);
-		hyperLink1.setText(saved_File);
-		comment2.setText("View glb files");
-		hyperLink2.setText("here");
+		updateMessage.setText("Sorry there was a problem during processing. "
+				+ "Please check you .stl file");
+		refresh_Page();
 	}
-	
 
-	
-	private void show_File() {
+	/**
+	 * This method opens a file chooser to show the user the 
+	 * processing file after completion of processing. 
+	 */
+	public void show_File() {
 		
 		final FileChooser fileChooser2 = new FileChooser();
 		fileChooser2.setInitialDirectory(new File(outPath));
 		File file2 = fileChooser2.showOpenDialog(Main.thestage);
-
 	}
 
-	
-	private Boolean open_glbViewer() {
+	/**
+	 * This methods open a gltf2 viewer in a browser where user can drag and 
+	 * drop the new .glb file to view the mesh
+	 * @return
+	 */
+	public Boolean open_glbViewer() {
 		Boolean notOpen = false;
 		
 		try {
@@ -218,10 +276,69 @@ public class Main_Controller {
 			notOpen = true;
 		}
 		return notOpen;
-
 	}
 	
+	/**
+	 * This method is called when the user chooses to continue with mesh processing/
+	 * It is called from a button that is presented after 7 minutes processing. 
+	 */
+	public void continue_Processing() {
+		
+			gif_ImageView.setVisible(true);
+			cancel_Button.setVisible(false);
+			cancel_Message.setVisible(false);
+			continue_Button.setVisible(false);
+			
+			timeline_Cancel = new Timeline(new KeyFrame(Duration.millis(420000), ae -> check_Finished()));
+			timeline_Cancel.play();
+		}
 	
+	/**
+	 * This method is called when there is an Interrupted Exception during
+	 * proecssing - it alerts the user through the GUI.
+	 */
+	public void handle_InterruptedExeption() {
+		updateMessage.setText("Mesh Processing was interupted - please try again "
+				+ "or check your .stl file");
+		updateMessage.wrapTextProperty();
+		gif_ImageView.setVisible(false);
+		small_Update.setText("");
+		file_Path_Label.setText("");
+	}
+	
+	/**
+	 * This method updates the GUI when there is a problem with the file 
+	 * detected during mesh processing. 
+	 */
+	public void handle_fileProblem() {
+		updateMessage.setText("There was a problem with the file. Please ensure "
+				+ "valid .stl file.");
+		updateMessage.wrapTextProperty();
+		gif_ImageView.setVisible(false);
+		small_Update.setText("");
+		file_Path_Label.setText("");
+		
+	}
+	
+	/**
+	 * This method updates the GUI when there is an IOException during mesh
+	 * processing. 
+	 */
+	public void handle_IOException() {
+		updateMessage.setText("There was a problem locating Blender or the Processing Script. "
+				+ "Please ensure they are in the same folder as Mesh_Pro App");
+		updateMessage.wrapTextProperty();
+		gif_ImageView.setVisible(false);
+		small_Update.setText("");
+		file_Path_Label.setText("");
+	}
+	
+	/**
+	 * This method updates the GUI when the applciation is refreshed or a mesh
+	 * processing is cancelled. It also resets all the static variables that build
+	 * the shell command, stops the timeline that is played during processing and 
+	 * calls 'cancel()' on the background task thread. 
+	 */
 	public void refresh_Page() {
 		
 		updateMessage.setText("");
@@ -237,20 +354,34 @@ public class Main_Controller {
 		new_fileName = null;
 		saved_File = null;
 		gif_ImageView.setVisible(false);
+		cancel_Button.setVisible(false);
+		cancel_Message.setVisible(false);
+		continue_Button.setVisible(false);
+		Command.file_Problem = false;
+		Command.cancelledIOError = false;
+		Command.interrupted_Error = false;
 		
 		// cancel thread
-		
 		System.out.println(task);
 		task.cancel(true);
+		timeline_Cancel.stop();
 		task = new BackgroundTask();
 		
 	}
 
+	/**
+	 * This methods lays out the GUI on main.fxml loading and lays out the 
+	 * second tab with a web view engine - that runs the Hololens web app from 
+	 * Immanuel Baskaran: https://goshmhif.azurewebsites.net/Hololens-Webapp/#/add
+	 */
 	@FXML
 	public void initialize() {
 		
 		done_Anchor.setVisible(false);
-
+		cancel_Button.setVisible(false);
+		cancel_Message.setVisible(false);
+		continue_Button.setVisible(false);
+		
 		export_Type.getItems().addAll("fbx", "glb");
 		organ_Selector.getItems().addAll("Skin", "Brain", "Lung", "Heart", "Bone");
 
@@ -265,16 +396,6 @@ public class Main_Controller {
 		
 
 		web_ViewBox2.getChildren().addAll(web_View2);
-
-		// lays out webview wngine on second tab with gltf viewer app
-		WebView web_View1 = new WebView();
-		web_View1.setPrefHeight(783);
-		web_View1.setPrefWidth(1108);
-		WebEngine engine1 = web_View1.getEngine();
-		engine1.load("https://gltf-viewer.donmccurdy.com/");
-		engine1.setJavaScriptEnabled(true);
-
-		web_ViewBox1.getChildren().addAll(web_View1);
 
 	}
 
