@@ -45,7 +45,7 @@ public class Main extends Application {
 			String decodedPath = URLDecoder.decode(path, "UTF-8");
 			System.out.println(decodedPath);
 			
-			String file3 = new File(decodedPath).getParentFile().getParentFile().getPath();
+			String file3 = new File(decodedPath).getParentFile().getPath();
 			blender_Path = file3;
 			System.out.println(blender_Path);
 

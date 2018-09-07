@@ -57,6 +57,7 @@ public class Command {
 		command.append("/Blender/blender.app/Contents/MacOS/blender --background --python ");
 	    command.append(Main.blender_Path);
 	    command.append("/decimate.py -- ");
+	    System.out.println(command.toString());
 		
 		command.append(Main_Controller.filePath);
 		command.append(" ");
