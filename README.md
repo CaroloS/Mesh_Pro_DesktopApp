@@ -1,5 +1,7 @@
 # Mesh_Pro_DesktopApp
 
+Description: Multi-threaded Java/JavaFX application that runs Blender 3D modelling software in the background and processes .stl 3D meshes ready for VR applicaitons (decimates surface, adds material, converts file format etc.) <br>
+
 Video Demonstration here: https://youtu.be/1UDwQpKwpLY
 
 ## Pre-requisites & Development tool
